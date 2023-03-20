@@ -1,6 +1,6 @@
 from typing import Iterable
-from threading import Thread, Event as ThreadingEvent
-from queue import Queue, Empty
+from threading import Thread, Event as ThreadingEvent  # Поток обработки подписок
+from queue import Queue, Empty  # Очередь подписок/отписок
 from grpc import ssl_channel_credentials, secure_channel  # Защищенный канал
 from FinamPy.proto.tradeapi.v1.common_pb2 import Market  # Рынки
 from FinamPy.proto.tradeapi.v1.events_pb2 import (
@@ -53,11 +53,11 @@ class FinamPy:
     def subscribtions_handler(self):
         """Поток обработки подписок"""
         events = self.events_stub.GetEvents(request_iterator=self.request_iterator(), metadata=self.metadata)  # Получаем подписки
-        # for event in events:  # FIXME Подписки не приходят
-        #     if type(event) == OrderBookEvent:  # Событие стакана
-        #         self.on_order_book_event(event)
-        #     elif type(event) == PortfolioEvent:  # Событие портфеля
-        #         self.on_portfolio_event(event)
+        for event in events:  # FIXME Подписки не приходят. Дальше этой точки программа не идет
+            if type(event) == OrderBookEvent:  # Событие стакана
+                self.on_order_book(event)
+            elif type(event) == PortfolioEvent:  # Событие портфеля
+                self.on_portfolio(event)
 
     def __init__(self, access_token):
         """Инициализация
@@ -74,8 +74,8 @@ class FinamPy:
         self.stops_stub = StopsStub(channel)  # Сервис стоп заявок
 
         # События Finam Trade API
-        self.on_order_book_event = self.default_handler  # Стакан
-        self.on_portfolio_event = self.default_handler  # Портфель
+        self.on_order_book = self.default_handler  # Стакан
+        self.on_portfolio = self.default_handler  # Портфель
 
         self.subscription_queue: Queue[SubscriptionRequest] = Queue()  # Буфер команд на подписку/отписку
         self.unsubscribe_event = ThreadingEvent()  # Событие отписки от всех подписок
