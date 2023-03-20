@@ -1,24 +1,28 @@
-from FinamPy import FinamPy
+import time
+
+from FinamPy.FinamPy import FinamPy
 from FinamPy.Config import Config
 
 
 if __name__ == '__main__':  # Точка входа при запуске этого скрипта
-    fp_provider = FinamPy(Config.ClientId, Config.AccessToken)  # Подключаемся к торговому счету
+    fp_provider = FinamPy(Config.AccessToken)  # Подключаемся
 
-    board = 'TQBR'  # Основной режим торгов инструмента
-    symbol = 'SBER'  # Тикер
-    # board = 'FUT'  # Основной режим торгов инструмента
-    # symbol = 'SiH3'  # Тикер можно искать по короткому имени. Для фьючерсов: <Код тикера><Месяц экспирации: 3-H, 6-M, 9-U, 12-Z><Последняя цифра года>
-    # symbol = 'RIH3'
+    # symbols = (('TQBR', 'SBER'), ('FUT', 'SiM3'), ('FUT', 'RIM3'))  # Кортеж тикеров в виде (код площадки, код тикера)
+    #
+    # print('Получаем информацию обо всех тикерах (займет около 10-и секунд)...')
+    # securities = fp_provider.get_securities()  # Получаем информацию обо всех тикерах
+    # for board, symbol in symbols:  # Пробегаемся по всем тикерам
+    #     si = next(item for item in securities.securities if item.board == board and item.code == symbol)
+    #     # print('Ответ от сервера:', si)
+    #     print(f'\nИнформация о тикере {si.board}.{si.code} ({si.short_name}, {fp_provider.markets[si.market]}):')
+    #     print(f'Валюта: {si.currency}')
+    #     decimals = si.decimals
+    #     print(f'Кол-во десятичных знаков: {decimals}')
+    #     print(f'Лот: {si.lot_size}')
+    #     min_step = 10 ** -decimals * si.min_step
+    #     print(f'Шаг цены: {min_step}')
 
-    # Данные тикера и его торговый счет
-    securities = fp_provider.get_securities()  # Получаем информацию о тикерах
-    si = next(item for item in securities['securities'] if item['board'] == board and item['code'] == symbol)
-    print('Ответ от сервера:', si)
-    print(f'Информация о тикере {si["board"]}.{si["code"]} ({si["shortName"]}, {si["market"]}):')
-    print(f'Валюта: {si["currency"]}')
-    decimals = si["decimals"]
-    print(f'Кол-во десятичных знаков: {decimals}')
-    print(f'Лот: {si["lotSize"]}')
-    min_step = 10 ** -decimals * si["minStep"]
-    print(f'Шаг цены: {min_step}')
+    fp_provider.subscribe_order_book('orderbook1', 'SBER', 'TQBR')
+    time.sleep(5)
+    fp_provider.unsubscribe_order_book('orderbook1', 'SBER', 'TQBR')
+    fp_provider.close_subscriptions_thread()

@@ -4,5 +4,5 @@
 # 3. В личном кабинете Comon получить токен https://www.comon.ru/my/trade-api/tokens
 
 class Config:
-    ClientId = '<Торговый счет>'  # Идентификатор торгового счёта
+    ClientIds = ('<Торговый счет>',)  # Торговые счёта
     AccessToken = '<Токен>'  # Торговый токен доступа
