@@ -1,5 +1,3 @@
-import time
-
 from FinamPy.FinamPy import FinamPy
 from FinamPy.Config import Config
 
@@ -9,7 +7,7 @@ if __name__ == '__main__':  # Точка входа при запуске это
 
     symbols = (('TQBR', 'SBER'), ('FUT', 'SiM3'), ('FUT', 'RIM3'))  # Кортеж тикеров в виде (код площадки, код тикера)
 
-    print('Получаем информацию обо всех тикерах (займет около 10-и секунд)...')
+    print('Получаем информацию обо всех тикерах (займет несколько секунд)...')
     securities = fp_provider.get_securities()  # Получаем информацию обо всех тикерах
     for board, symbol in symbols:  # Пробегаемся по всем тикерам
         si = next(item for item in securities.securities if item.board == board and item.code == symbol)
