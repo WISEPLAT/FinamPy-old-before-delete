@@ -1,3 +1,4 @@
+from typing import Union  # Объединение типов
 from threading import Thread  # Поток обработки подписок
 from queue import SimpleQueue  # Очередь подписок/отписок
 from grpc import ssl_channel_credentials, secure_channel, RpcError  # Защищенный канал
@@ -134,7 +135,7 @@ class FinamPy:
 
     # Orders
 
-    def get_orders(self, client_id, include_matched=True, include_canceled=True, include_active=True) -> GetOrdersResult | None:
+    def get_orders(self, client_id, include_matched=True, include_canceled=True, include_active=True) -> Union[GetOrdersResult, None]:
         """Возвращает список заявок
 
         :param str client_id: Идентификатор торгового счёта
@@ -146,7 +147,7 @@ class FinamPy:
         return self.call_function(self.orders_stub.GetOrders, request)
 
     def new_order(self, client_id, security_board, security_code, buy_sell, quantity, use_credit, price, property: OrderProperty,
-                  condition_type: OrderCondition, condition_price, condition_time, valid_type: OrderValidBeforeType, valid_time) -> NewOrderResult | None:
+                  condition_type: OrderCondition, condition_price, condition_time, valid_type: OrderValidBeforeType, valid_time) -> Union[NewOrderResult, None]:
         """Создать новую заявку
 
         :param str client_id: Идентификатор торгового счёта
@@ -186,7 +187,7 @@ class FinamPy:
                                   valid_before=OrderValidBefore(type=valid_type, time=valid_time))
         return self.call_function(self.orders_stub.NewOrder, request)
 
-    def cancel_order(self, client_id, transaction_id) -> CancelOrderResult | None:
+    def cancel_order(self, client_id, transaction_id) -> Union[CancelOrderResult, None]:
         """Отменяет заявку
 
         :param str client_id: Идентификатор торгового счёта
@@ -197,7 +198,7 @@ class FinamPy:
 
         # Portfolios
 
-    def get_portfolio(self, client_id, include_currencies=True, include_money=True, include_positions=True, include_max_buy_sell=True) -> GetPortfolioResult | None:
+    def get_portfolio(self, client_id, include_currencies=True, include_money=True, include_positions=True, include_max_buy_sell=True) -> Union[GetPortfolioResult, None]:
         """Возвращает портфель
 
         :param str client_id: Идентификатор торгового счёта
@@ -215,14 +216,14 @@ class FinamPy:
 
     # Securities
 
-    def get_securities(self) -> GetSecuritiesResult | None:
+    def get_securities(self) -> Union[GetSecuritiesResult, None]:
         """Справочник инструментов"""
         request = GetSecuritiesRequest()
         return self.call_function(self.securities_stub.GetSecurities, request)
 
     # Stops
 
-    def get_stops(self, client_id, include_executed=True, include_canceled=True, include_active=True) -> GetStopsResult | None:
+    def get_stops(self, client_id, include_executed=True, include_canceled=True, include_active=True) -> Union[GetStopsResult, None]:
         """Возвращает список стоп-заявок
 
         :param str client_id: Идентификатор торгового счёта
@@ -237,7 +238,7 @@ class FinamPy:
                  sl_activation_price, sl_price, sl_market_price, sl_value, sl_units: StopQuantityUnits, sl_time, sl_use_credit,
                  tp_activation_price, tp_correction_price_value, tp_correction_price_units: StopPriceUnits, tp_spread_price_value, tp_spread_price_units: StopPriceUnits,
                  tp_market_price, tp_quantity_value, tp_quantity_units: StopQuantityUnits, tp_time, tp_use_credit,
-                 expiration_date, link_order, valid_type: OrderValidBeforeType, valid_time) -> NewStopResult | None:
+                 expiration_date, link_order, valid_type: OrderValidBeforeType, valid_time) -> Union[NewStopResult, None]:
         """Выставляет стоп-заявку
 
         :param str client_id: Идентификатор торгового счёта
@@ -290,7 +291,7 @@ class FinamPy:
                                  expiration_date=expiration_date, link_order=link_order, valid_before=OrderValidBefore(type=valid_type, time=valid_time))
         return self.call_function(self.stops_stub.NewStop, request)
 
-    def cancel_stop(self, client_id, stop_id) -> CancelStopResult | None:
+    def cancel_stop(self, client_id, stop_id) -> Union[CancelStopResult, None]:
         """Снимает стоп-заявку
 
         :param str client_id: Идентификатор торгового счёта
