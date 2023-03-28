@@ -1,6 +1,6 @@
 from threading import Thread  # Поток обработки подписок
 from queue import SimpleQueue  # Очередь подписок/отписок
-from grpc import ssl_channel_credentials, secure_channel, _channel  # Защищенный канал
+from grpc import ssl_channel_credentials, secure_channel, RpcError  # Защищенный канал
 from .proto.tradeapi.v1.common_pb2 import Market, OrderValidBefore, OrderValidBeforeType  # Рынки
 from .proto.tradeapi.v1.events_pb2 import (
     SubscriptionRequest,
@@ -55,7 +55,7 @@ class FinamPy:
                     self.on_order_book(event)
                 if event.portfolio != PortfolioEvent():  # Событие портфеля
                     self.on_portfolio(event)
-        except _channel._MultiThreadedRendezvous:  # При закрытии канала попадем на эту ошибку
+        except RpcError:  # При закрытии канала попадем на эту ошибку (grpc._channel._MultiThreadedRendezvous)
             pass  # Все в порядке, ничего делать не нужно
 
     def __init__(self, access_token):
@@ -80,6 +80,16 @@ class FinamPy:
         self.subscription_queue: SimpleQueue[SubscriptionRequest] = SimpleQueue()  # Буфер команд на подписку/отписку
         self.subscriptions_thread = Thread(target=self.subscribtions_handler, name='SubscriptionsThread')  # Создаем поток обработки подписок
         self.subscriptions_thread.start()  # Запускаем поток
+
+    # Запросы
+
+    def call_function(self, func, request):
+        """Вызов функции"""
+        try:  # Пытаемся
+            response, call = func.with_call(request=request, metadata=self.metadata)  # вызвать функцию
+            return response  # и вернуть ответ
+        except RpcError:  # Если получили ошибку канала
+            return None  # то возвращаем пустое значение
 
     # Events
 
@@ -124,7 +134,7 @@ class FinamPy:
 
     # Orders
 
-    def get_orders(self, client_id, include_matched=True, include_canceled=True, include_active=True) -> GetOrdersResult:
+    def get_orders(self, client_id, include_matched=True, include_canceled=True, include_active=True) -> GetOrdersResult | None:
         """Возвращает список заявок
 
         :param str client_id: Идентификатор торгового счёта
@@ -133,11 +143,10 @@ class FinamPy:
         :param bool include_active: Вернуть активные заявки
         """
         request = GetOrdersRequest(client_id=client_id, include_matched=include_matched, include_canceled=include_canceled, include_active=include_active)
-        response, call = self.orders_stub.GetOrders.with_call(request=request, metadata=self.metadata)
-        return response
+        return self.call_function(self.orders_stub.GetOrders, request)
 
     def new_order(self, client_id, security_board, security_code, buy_sell, quantity, use_credit, price, property: OrderProperty,
-                  condition_type: OrderCondition, condition_price, condition_time, valid_type: OrderValidBeforeType, valid_time) -> NewOrderResult:
+                  condition_type: OrderCondition, condition_price, condition_time, valid_type: OrderValidBeforeType, valid_time) -> NewOrderResult | None:
         """Создать новую заявку
 
         :param str client_id: Идентификатор торгового счёта
@@ -175,22 +184,20 @@ class FinamPy:
                                   buy_sell=buy_sell, quantity=quantity, use_credit=use_credit, price=price, property=property,
                                   condition=OrderCondition(type=condition_type, price=condition_price, time=condition_time),
                                   valid_before=OrderValidBefore(type=valid_type, time=valid_time))
-        response, call = self.orders_stub.NewOrder.with_call(request=request, metadata=self.metadata)
-        return response
+        return self.call_function(self.orders_stub.NewOrder, request)
 
-    def cancel_order(self, client_id, transaction_id) -> CancelOrderResult:
+    def cancel_order(self, client_id, transaction_id) -> CancelOrderResult | None:
         """Отменяет заявку
 
         :param str client_id: Идентификатор торгового счёта
         :param int transaction_id: Идентификатор транзакции, который может быть использован для отмены заявки или определения номера заявки в сервисе событий
         """
         request = CancelOrderRequest(client_id=client_id, transaction_id=transaction_id)
-        response, call = self.orders_stub.CancelOrder.with_call(request=request, metadata=self.metadata)
-        return response
+        return self.call_function(self.orders_stub.CancelOrder, request)
 
         # Portfolios
 
-    def get_portfolio(self, client_id, include_currencies=True, include_money=True, include_positions=True, include_max_buy_sell=True) -> GetPortfolioResult:
+    def get_portfolio(self, client_id, include_currencies=True, include_money=True, include_positions=True, include_max_buy_sell=True) -> GetPortfolioResult | None:
         """Возвращает портфель
 
         :param str client_id: Идентификатор торгового счёта
@@ -204,20 +211,18 @@ class FinamPy:
             include_money=include_money,
             include_positions=include_positions,
             include_max_buy_sell=include_max_buy_sell))
-        response, call = self.portfolios_stub.GetPortfolio.with_call(request=request, metadata=self.metadata)
-        return response
+        return self.call_function(self.portfolios_stub.GetPortfolio, request)
 
     # Securities
 
-    def get_securities(self) -> GetSecuritiesResult:
+    def get_securities(self) -> GetSecuritiesResult | None:
         """Справочник инструментов"""
         request = GetSecuritiesRequest()
-        response, call = self.securities_stub.GetSecurities.with_call(request=request, metadata=self.metadata)
-        return response
+        return self.call_function(self.securities_stub.GetSecurities, request)
 
     # Stops
 
-    def get_stops(self, client_id, include_executed=True, include_canceled=True, include_active=True) -> GetStopsResult:
+    def get_stops(self, client_id, include_executed=True, include_canceled=True, include_active=True) -> GetStopsResult | None:
         """Возвращает список стоп-заявок
 
         :param str client_id: Идентификатор торгового счёта
@@ -226,14 +231,13 @@ class FinamPy:
         :param bool include_active: Вернуть активные стоп-заявки
         """
         request = GetStopsRequest(client_id=client_id, include_executed=include_executed, include_canceled=include_canceled, include_active=include_active)
-        response, call = self.stops_stub.GetStops.with_call(request=request, metadata=self.metadata)
-        return response
+        return self.call_function(self.stops_stub.GetStops, request)
 
     def new_stop(self, client_id, security_board, security_code, buy_sell,
                  sl_activation_price, sl_price, sl_market_price, sl_value, sl_units: StopQuantityUnits, sl_time, sl_use_credit,
                  tp_activation_price, tp_correction_price_value, tp_correction_price_units: StopPriceUnits, tp_spread_price_value, tp_spread_price_units: StopPriceUnits,
                  tp_market_price, tp_quantity_value, tp_quantity_units: StopQuantityUnits, tp_time, tp_use_credit,
-                 expiration_date, link_order, valid_type: OrderValidBeforeType, valid_time) -> NewStopResult:
+                 expiration_date, link_order, valid_type: OrderValidBeforeType, valid_time) -> NewStopResult | None:
         """Выставляет стоп-заявку
 
         :param str client_id: Идентификатор торгового счёта
@@ -284,18 +288,16 @@ class FinamPy:
                                                         market_price=tp_market_price, quantity=StopQuantity(value=tp_quantity_value, units=tp_quantity_units),
                                                         time=tp_time, use_credit=tp_use_credit),
                                  expiration_date=expiration_date, link_order=link_order, valid_before=OrderValidBefore(type=valid_type, time=valid_time))
-        response, call = self.stops_stub.NewStop.with_call(request=request, metadata=self.metadata)
-        return response
+        return self.call_function(self.stops_stub.NewStop, request)
 
-    def cancel_stop(self, client_id, stop_id) -> CancelStopResult:
+    def cancel_stop(self, client_id, stop_id) -> CancelStopResult | None:
         """Снимает стоп-заявку
 
         :param str client_id: Идентификатор торгового счёта
         :param int stop_id: Идентификатор стоп-заявки
         """
         request = CancelStopRequest(client_id=client_id, stop_id=stop_id)
-        response, call = self.stops_stub.CancelStop.with_call(request=request, metadata=self.metadata)
-        return response
+        return self.call_function(self.stops_stub.CancelStop, request)
 
     # Выход и закрытие
 
