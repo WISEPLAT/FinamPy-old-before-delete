@@ -52,9 +52,9 @@ class FinamPy:
         events = self.events_stub.GetEvents(request_iterator=self.request_iterator(), metadata=self.metadata)  # Получаем значения подписок
         try:
             for event in events:  # Пробегаемся по значениям подписок до закрытия канала
-                if event.order_book != OrderBookEvent():  # Событие стакана
+                if event.order_book != OrderBookEvent():  # Если пришло событие стакана
                     self.on_order_book(event)
-                if event.portfolio != PortfolioEvent():  # Событие портфеля
+                if event.portfolio != PortfolioEvent():  # Если пришло событие портфеля
                     self.on_portfolio(event)
         except RpcError:  # При закрытии канала попадем на эту ошибку (grpc._channel._MultiThreadedRendezvous)
             pass  # Все в порядке, ничего делать не нужно
