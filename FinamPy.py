@@ -47,13 +47,13 @@ class FinamPy:
         """Пустой обработчик события по умолчанию. Его можно заменить на пользовательский"""
         pass
 
-    def utc_to_msk_datetime(self, dt) -> datetime:
+    def utc_to_msk_datetime(self, dt: datetime) -> datetime:
         """Перевод времени из UTC в московское
 
         :param datetime dt: Время UTC
         :return: Московское время
         """
-        dt_msk = utc.localize(dt).astimezone(self.tzMsk)  # Переводим UTC в МСК
+        dt_msk = utc.localize(dt).astimezone(self.tz_msk)  # Переводим UTC в МСК
         return dt_msk.replace(tzinfo=None)  # Убираем временнУю зону
 
     def request_iterator(self):
@@ -67,15 +67,15 @@ class FinamPy:
         try:
             for event in events:  # Пробегаемся по значениям подписок до закрытия канала
                 e: Event = event  # Приводим пришедшее значение к подпискам
-                if e.order is not None:  # Если пришло событие с заявкой
+                if e.order != OrderEvent():  # Если пришло событие с заявкой
                     self.on_order(e.order)
-                if e.trade is not None:  # Если пришло событие со сделкой
+                if e.trade != TradeEvent():  # Если пришло событие со сделкой
                     self.on_trade(e.trade)
-                if e.order_book is not None:  # Если пришло событие стакана
+                if e.order_book != OrderBookEvent():  # Если пришло событие стакана
                     self.on_order_book(e.order_book)
-                if e.portfolio is not None:  # Если пришло событие портфеля
+                if e.portfolio != PortfolioEvent():  # Если пришло событие портфеля
                     self.on_portfolio(e.portfolio)
-                if e.response is not None:  # Если пришло событие результата выполнения запроса
+                if e.response != ResponseEvent:  # Если пришло событие результата выполнения запроса
                     self.on_response(e.response)
         except RpcError:  # При закрытии канала попадем на эту ошибку (grpc._channel._MultiThreadedRendezvous)
             pass  # Все в порядке, ничего делать не нужно
