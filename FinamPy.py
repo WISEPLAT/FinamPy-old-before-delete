@@ -8,7 +8,7 @@ from queue import SimpleQueue  # Очередь подписок/отписок
 from grpc import ssl_channel_credentials, secure_channel, RpcError  # Защищенный канал
 from google.protobuf.timestamp_pb2 import Timestamp  # Представление времени
 from google.protobuf.wrappers_pb2 import DoubleValue  # Представление цены
-import proto.tradeapi.v1.common_pb2 as common  # Покупка/продажа
+from .proto.tradeapi.v1 import common_pb2 as common  # Покупка/продажа
 from .proto.tradeapi.v1.common_pb2 import Market, OrderValidBefore, ResponseEvent  # Рынки и событие результата выполнения запроса
 from .proto.tradeapi.v1.events_pb2 import (
     SubscriptionRequest, OrderBookSubscribeRequest, OrderBookUnsubscribeRequest, OrderTradeSubscribeRequest, OrderTradeUnsubscribeRequest,
