@@ -18,7 +18,7 @@ if __name__ == '__main__':  # Точка входа при запуске это
 
     # Проверяем работу подписок
     print(f'\nПодписка на стакан тикера: {security_board}.{security_code}')
-    fp_provider.on_order_book = lambda event: print('ask:', event.order_book.asks[0].price, 'bid:', event.order_book.bids[-1].price)  # Обработчик события прихода подписки на стакан
+    fp_provider.on_order_book = lambda event: print('ask:', event.asks[0].price, 'bid:', event.bids[0].price)  # Обработчик события прихода подписки на стакан
     fp_provider.subscribe_order_book(request_id='orderbook1', security_code=security_code, security_board=security_board)  # Подписываемся на стакан тикера
 
     # Выход
